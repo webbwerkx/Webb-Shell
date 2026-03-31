@@ -1,4 +1,4 @@
-# webb-dots
+# WEBB-DOTS
 
 Rebuilt Caeliestia cli/shell to use with my own configs and set up. 
 
