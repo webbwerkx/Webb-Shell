@@ -1,0 +1,139 @@
+{
+  "id": "nvimtree",
+  "label": "NvimTree",
+  "icon": "folder_open",
+  "binds": [
+    {
+      "keys": "Return",
+      "desc": "Open file / expand folder"
+    },
+    {
+      "keys": "o",
+      "desc": "Open file / expand folder"
+    },
+    {
+      "keys": "CTRL+]",
+      "desc": "CD into directory"
+    },
+    {
+      "keys": "CTRL+V",
+      "desc": "Open in vertical split"
+    },
+    {
+      "keys": "CTRL+X",
+      "desc": "Open in horizontal split"
+    },
+    {
+      "keys": "CTRL+T",
+      "desc": "Open in new tab"
+    },
+    {
+      "keys": "<",
+      "desc": "Navigate up a directory"
+    },
+    {
+      "keys": ">",
+      "desc": "Open directory"
+    },
+    {
+      "keys": "P",
+      "desc": "Go to parent directory"
+    },
+    {
+      "keys": "Backspace",
+      "desc": "Close current folder"
+    },
+    {
+      "keys": "K",
+      "desc": "Show file info"
+    },
+    {
+      "keys": "H",
+      "desc": "Toggle hidden dotfiles"
+    },
+    {
+      "keys": "I",
+      "desc": "Toggle git ignored files"
+    },
+    {
+      "keys": "a",
+      "desc": "Create new file or directory"
+    },
+    {
+      "keys": "d",
+      "desc": "Delete file / directory"
+    },
+    {
+      "keys": "D",
+      "desc": "Trash file / directory"
+    },
+    {
+      "keys": "r",
+      "desc": "Rename file"
+    },
+    {
+      "keys": "CTRL+R",
+      "desc": "Full rename (edit full path)"
+    },
+    {
+      "keys": "x",
+      "desc": "Cut file"
+    },
+    {
+      "keys": "c",
+      "desc": "Copy file"
+    },
+    {
+      "keys": "p",
+      "desc": "Paste file"
+    },
+    {
+      "keys": "y",
+      "desc": "Copy filename"
+    },
+    {
+      "keys": "Y",
+      "desc": "Copy relative path"
+    },
+    {
+      "keys": "gy",
+      "desc": "Copy absolute path"
+    },
+    {
+      "keys": "s",
+      "desc": "Open with system default app"
+    },
+    {
+      "keys": "q",
+      "desc": "Close NvimTree"
+    },
+    {
+      "keys": "g?",
+      "desc": "Show help / all keybinds"
+    },
+    {
+      "keys": "W",
+      "desc": "Collapse all folders"
+    },
+    {
+      "keys": "E",
+      "desc": "Expand all folders"
+    },
+    {
+      "keys": "F",
+      "desc": "Live filter files"
+    },
+    {
+      "keys": "CTRL+K",
+      "desc": "Toggle file info panel"
+    },
+    {
+      "keys": "m",
+      "desc": "Toggle bookmark on file"
+    },
+    {
+      "keys": "bmv",
+      "desc": "Move all bookmarked files"
+    }
+  ]
+}

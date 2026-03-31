@@ -1,0 +1,586 @@
+#!/usr/bin/env python3
+"""
+webb-keybinds-convert
+~~~~~~~~~~~~~~~~~~~~~
+Converts keybind config files of any format into JSON files
+readable by the webb-dots keybind viewer.
+
+Usage:
+    webb-keybinds-convert <source_dir> <output_dir>
+
+Supported formats (auto-detected):
+    .conf   — Hyprland (bind = ...) or Kitty (map ...)
+    .toml   — Tmux (toml-based config)
+    .lua    — Neovim (vim.keymap.set / map calls)
+    .json   — Already correct format, copied as-is
+    .txt    — Simple "KEYS    Description" tab/multi-space separated lines
+
+Drop any config file into <source_dir> and run this script.
+Output JSON files land in <output_dir> ready for the viewer.
+"""
+
+import sys
+import os
+import re
+import json
+import shutil
+from pathlib import Path
+
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
+def slugify(name: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
+
+
+def make_output(label: str, icon: str, binds: list[dict]) -> dict:
+    return {
+        "id": slugify(label),
+        "label": label,
+        "icon": icon,
+        "binds": [b for b in binds if b.get("keys") and b.get("desc")],
+    }
+
+
+def normalise_keys(raw: str) -> str:
+    """Normalise modifier names to consistent format."""
+    raw = raw.strip()
+    replacements = {
+        "super": "SUPER", "mod": "SUPER", "$mainmod": "SUPER", "mainmod": "SUPER",
+        "ctrl": "CTRL", "control": "CTRL",
+        "shift": "SHIFT",
+        "alt": "ALT", "mod1": "ALT",
+        "return": "Return", "enter": "Return",
+        "escape": "Escape", "esc": "Escape",
+        "tab": "Tab", "space": "Space",
+        "backspace": "Backspace", "delete": "Delete",
+        "left": "Left", "right": "Right", "up": "Up", "down": "Down",
+        "page_up": "Page_Up", "page_down": "Page_Down",
+        "home": "Home", "end": "End", "insert": "Insert",
+        "print": "Print", "pause": "Pause",
+    }
+    parts = re.split(r"[+\-]", raw)
+    normed = []
+    for p in parts:
+        p = p.strip()
+        low = p.lower()
+        normed.append(replacements.get(low, p))
+    return "+".join(normed)
+
+
+# ── Parsers ───────────────────────────────────────────────────────────────────
+
+def parse_hyprland(text: str, stem: str) -> dict:
+    """
+    Parse Hyprland config bind lines.
+    Format: bind[e|r|l|m|t] = MOD, key, dispatcher[, args...]
+    We use the dispatcher+args as description when no comment follows.
+    """
+    binds = []
+    for line in text.splitlines():
+        # Strip inline comments
+        code = line.split("#")[0].strip()
+        comment = ""
+        if "#" in line:
+            comment = line.split("#", 1)[1].strip()
+
+        # Match bind lines
+        m = re.match(
+            r"^bind[erltm]?\s*=\s*([^,]*),\s*([^,]+),\s*([^,]+)(?:,\s*(.*))?$",
+            code, re.IGNORECASE
+        )
+        if not m:
+            continue
+
+        mods_raw, key_raw, dispatcher, args = m.groups()
+        mods_raw = mods_raw.strip()
+        key = key_raw.strip()
+        dispatcher = dispatcher.strip()
+        args = (args or "").strip()
+
+        # Build key string
+        mods = [normalise_keys(m.strip()) for m in re.split(r"[|& ]+", mods_raw) if m.strip()]
+        key_norm = normalise_keys(key)
+        keys = "+".join(mods + [key_norm]) if mods else key_norm
+
+        # Build description
+        if comment:
+            desc = comment
+        elif dispatcher.lower() in ("exec", "exec-once"):
+            desc = f"Run: {args}" if args else "Execute command"
+        elif args:
+            desc = f"{dispatcher} {args}"
+        else:
+            desc = dispatcher
+
+        binds.append({"keys": keys, "desc": desc})
+
+    label = stem.replace("-", " ").replace("_", " ").title()
+    return make_output(label, "desktop_windows", binds)
+
+
+def parse_kitty(text: str, stem: str) -> dict:
+    """
+    Parse Kitty config map lines.
+    Format: map [MODS+]key action [args...]
+    """
+    binds = []
+    for line in text.splitlines():
+        code = line.split("#")[0].strip()
+        comment = ""
+        if "#" in line:
+            comment = line.split("#", 1)[1].strip()
+
+        m = re.match(r"^map\s+(\S+)\s+(.+)$", code, re.IGNORECASE)
+        if not m:
+            continue
+
+        keys_raw, action = m.groups()
+        keys = normalise_keys(keys_raw.replace(">", "+"))
+        desc = comment if comment else action.strip()
+        binds.append({"keys": keys, "desc": desc})
+
+    label = stem.replace("-", " ").replace("_", " ").title()
+    return make_output(label, "terminal", binds)
+
+
+def parse_toml(text: str, stem: str) -> dict:
+    """
+    Parse TOML-based tmux keybind files.
+    Looks for [keybinds] or [[keybind]] sections, or key="..." desc="..." pairs.
+    Also handles plain 'bind-key' style lines mixed in.
+    """
+    binds = []
+
+    # Try structured TOML-ish pattern: tables with key/desc
+    # [[keybinds]]
+    # keys = "CTRL+B+C"
+    # desc = "New window"
+    block_pattern = re.compile(
+        r'keys\s*=\s*["\']([^"\']+)["\'].*?desc\s*=\s*["\']([^"\']+)["\']',
+        re.DOTALL
+    )
+    for m in block_pattern.finditer(text):
+        binds.append({"keys": normalise_keys(m.group(1)), "desc": m.group(2).strip()})
+
+    # Also try desc first, then keys
+    block_pattern2 = re.compile(
+        r'desc\s*=\s*["\']([^"\']+)["\'].*?keys\s*=\s*["\']([^"\']+)["\']',
+        re.DOTALL
+    )
+    for m in block_pattern2.finditer(text):
+        entry = {"keys": normalise_keys(m.group(2)), "desc": m.group(1).strip()}
+        if entry not in binds:
+            binds.append(entry)
+
+    # Fallback: bind-key style lines (tmux.conf mixed with toml)
+    if not binds:
+        for line in text.splitlines():
+            code = line.split("#")[0].strip()
+            comment = line.split("#", 1)[1].strip() if "#" in line else ""
+            m = re.match(r"^(?:bind|bind-key|-r\s+)(?:\s+-[a-zA-Z]\s+\S+)?\s+(\S+)\s+(.*)", code)
+            if m:
+                key, action = m.groups()
+                prefix = "CTRL+B"
+                keys = f"{prefix}+{normalise_keys(key)}"
+                desc = comment if comment else action.strip()
+                binds.append({"keys": keys, "desc": desc})
+
+    label = stem.replace("-", " ").replace("_", " ").title()
+    return make_output(label, "grid_view", binds)
+
+
+def parse_lua(text: str, stem: str) -> dict:
+    """
+    Parse Neovim Lua keybind files.
+    Handles vim.keymap.set and map() with or without desc.
+    Uses inline comments, preceding comment blocks, and rhs pattern matching
+    to generate clean human-readable descriptions.
+    """
+    binds = []
+    seen = set()
+
+    mode_labels = {
+        "n": "Normal", "i": "Insert", "v": "Visual", "x": "Visual",
+        "t": "Terminal", "c": "Command", "o": "Operator", "": "All",
+    }
+
+    # Known rhs patterns → human descriptions
+    RHS_DESCS = {
+        # motions
+        r"mzJ`z":                       "Join lines (keep cursor position)",
+        r"<C-d>zz":                      "Scroll down half page, centre cursor",
+        r"<C-u>zz":                      "Scroll up half page, centre cursor",
+        r"nzzzv":                        "Next search result, centre screen",
+        r"Nzzzv":                        "Previous search result, centre screen",
+        r'"_dP':                         "Paste without replacing clipboard",
+        r'"_d':                          "Delete without yanking",
+        r'_dP':                          "Paste without replacing clipboard",
+        r'_d':                           "Delete without yanking",
+        r"<C-w>w":                       "Switch to next window",
+        # quickfix / location list
+        r"<cmd>cnext<CR>zz":             "Next quickfix item",
+        r"<cmd>cprev<CR>zz":             "Previous quickfix item",
+        r"<cmd>lnext<CR>zz":             "Next location list item",
+        r"<cmd>lprev<CR>zz":             "Previous location list item",
+        r":cnext<CR>zz":                 "Next quickfix item",
+        r":cprev<CR>zz":                 "Previous quickfix item",
+        r":cclose<CR>":                  "Close quickfix list",
+        r":copen<CR>":                   "Open quickfix list",
+        r":cnext<CR>":                   "Next quickfix item",
+        r":cprev<CR>":                   "Previous quickfix item",
+        # commands
+        r"<cmd>DogeGenerate<cr>":        "Generate docstring (Doge)",
+        r"<cmd>make<CR>":                "Run make",
+        r"<cmd>source ~/.config/nvim/init.lua<cr>": "Reload neovim config",
+        r":checkhealth vim.lsp<CR>":     "LSP health check",
+        r":NvimTreeToggle<CR>":          "Toggle file tree",
+        r":cclose<CR>":                  "Close quickfix list",
+        r":copen<CR>":                   "Open quickfix list",
+        # visual line movement
+        r":m '>+1<CR>gv=gv":            "Move selected lines down",
+        r":m '<-2<CR>gv=gv":            "Move selected lines up",
+        # barbar
+        r"<Cmd>BufferPrevious<CR>":      "Previous buffer",
+        r"<Cmd>BufferNext<CR>":          "Next buffer",
+        r"<Cmd>BufferMovePrevious<CR>":  "Move buffer left",
+        r"<Cmd>BufferMoveNext<CR>":      "Move buffer right",
+        r"<Cmd>BufferGoto 1<CR>":        "Go to buffer 1",
+        r"<Cmd>BufferGoto 2<CR>":        "Go to buffer 2",
+        r"<Cmd>BufferGoto 3<CR>":        "Go to buffer 3",
+        r"<Cmd>BufferGoto 4<CR>":        "Go to buffer 4",
+        r"<Cmd>BufferGoto 5<CR>":        "Go to buffer 5",
+        r"<Cmd>BufferGoto 6<CR>":        "Go to buffer 6",
+        r"<Cmd>BufferGoto 7<CR>":        "Go to buffer 7",
+        r"<Cmd>BufferGoto 8<CR>":        "Go to buffer 8",
+        r"<Cmd>BufferGoto 9<CR>":        "Go to buffer 9",
+        r"<Cmd>BufferLast<CR>":          "Go to last buffer",
+        r"<Cmd>BufferPin<CR>":           "Pin/unpin buffer",
+        r"<Cmd>BufferClose<CR>":         "Close buffer",
+        r"<Cmd>BufferRestore<CR>":       "Restore closed buffer",
+        r"<Cmd>BufferPick<CR>":          "Pick buffer",
+        r"<Cmd>BufferPickDelete<CR>":    "Pick buffer to delete",
+        r"<Cmd>BufferOrderByBufferNumber<CR>": "Sort buffers by number",
+        r"<Cmd>BufferOrderByName<CR>":   "Sort buffers by name",
+        r"<Cmd>BufferOrderByDirectory<CR>": "Sort buffers by directory",
+        r"<Cmd>BufferOrderByLanguage<CR>": "Sort buffers by language",
+        r"<Cmd>BufferOrderByWindowNumber<CR>": "Sort buffers by window",
+        # misc
+        r"<Esc>":                        "Escape (exit insert mode)",
+        r"<nop>":                        "Disabled (nop)",
+        r"<Plug>OSCYankOperator":        "Yank to clipboard (OSC52, works over SSH)",
+        r"<Plug>OSCYankVisual":          "Yank selection to clipboard (OSC52)",
+    }
+
+    def clean_lhs(lhs):
+        lhs = lhs.strip().strip("\"\'")
+        lhs = lhs.replace("<leader>", "SPACE+").replace("<Leader>", "SPACE+")
+        lhs = lhs.replace("<localleader>", "SPACE+")
+        lhs = re.sub(r"<[Cc]-([^>]+)>", lambda x: f"CTRL+{x.group(1).upper()}", lhs)
+        lhs = re.sub(r"<[Ss]-([^>]+)>", lambda x: f"SHIFT+{x.group(1).upper()}", lhs)
+        lhs = re.sub(r"<[Aa]-([^>]+)>", lambda x: f"ALT+{x.group(1).upper()}", lhs)
+        lhs = re.sub(r"<[Mm]-([^>]+)>", lambda x: f"SUPER+{x.group(1).upper()}", lhs)
+        lhs = re.sub(r"<[Cc][Rr]>", "Return", lhs)
+        lhs = re.sub(r"<[Ee][Ss][Cc]>", "Escape", lhs)
+        lhs = re.sub(r"<[Tt][Aa][Bb]>", "Tab", lhs)
+        lhs = re.sub(r"<[Ss]-[Tt][Aa][Bb]>", "SHIFT+Tab", lhs)
+        lhs = re.sub(r"<[Ss]pace>", "Space", lhs)
+        lhs = re.sub(r"<[Bb][Ss]>", "Backspace", lhs)
+        lhs = re.sub(r"<[Nn][Oo][Pp]>", "", lhs)
+        lhs = re.sub(r"<[^>]+>", lambda x: x.group(0).strip("<>"), lhs)
+        return lhs.strip("+").strip() or "?"
+
+    def action_to_desc(rhs):
+        raw = rhs.strip().strip("\"\'").strip("[]")
+
+        # Check pattern lookup first (case-insensitive)
+        for pattern, desc in RHS_DESCS.items():
+            if raw.lower() == pattern.lower() or raw == pattern:
+                return desc
+
+        # vim.cmd.Something
+        m = re.match(r"vim\.cmd\.(\w+)", raw)
+        if m:
+            return m.group(1)
+
+        # <Plug>PluginName → split CamelCase
+        m = re.match(r"<[Pp]lug>(\w+)", raw)
+        if m:
+            return re.sub(r"([A-Z])", r" \1", m.group(1)).strip()
+
+        # Shell command: <cmd>!something<CR> or :!something<CR>
+        m = re.match(r"(?:<[Cc]md>|:)!(.+?)(?:<[Cc][Rr]>|$)", raw, re.IGNORECASE)
+        if m:
+            return f"Shell: {m.group(1).strip()[:50]}"
+
+        # <Cmd>CommandName<CR> or :CommandName<CR> — clean command name
+        m = re.match(r"(?:<[Cc]md>|:)([\w\s!.-]+?)(?:<[Cc][Rr]>|$)", raw, re.IGNORECASE)
+        if m:
+            cmd = m.group(1).strip().strip(":").strip()
+            if cmd and not any(c in cmd for c in ["<", ">", "\\", "/"]):
+                return cmd
+
+        # Regex / complex ex commands — give up and use a generic desc
+        if re.search(r'[/\\<>].*[/\\<>]', raw) or raw.startswith(":s/"):
+            return "Replace word under cursor"
+
+        # Pure short motions (≤6 chars, no special chars) — just show as-is
+        clean = re.sub(r"<[^>]+>", "", raw).strip()
+        if clean and len(raw) <= 8 and not any(c in raw for c in ["!", "/", "\\"]):
+            return clean or raw
+
+        return clean[:60] if clean else raw[:60]
+
+    def get_mode_label(mode_raw):
+        mode_raw = mode_raw.strip().strip("\"\'{}")
+        first = re.search(r'["\']([\w]+)["\']', mode_raw)
+        if first:
+            return mode_labels.get(first.group(1), first.group(1))
+        return mode_labels.get(mode_raw.strip(), mode_raw.strip())
+
+    # Build two comment indexes:
+    # 1. inline_comments[line_no] = comment on SAME line after the call
+    # 2. preceding_comments[line_no] = nearest comment block ABOVE this line
+    lines = text.splitlines()
+    inline_comments: dict[int, str] = {}
+    preceding_comments: dict[int, str] = {}
+
+    for i, line in enumerate(lines):
+        # Inline: comment after closing )
+        after_paren = line.rsplit(")", 1)[-1] if ")" in line else ""
+        if "--" in after_paren:
+            c = after_paren.split("--", 1)[1].strip()
+            if c and len(c) > 3 and not c.startswith("["):
+                inline_comments[i] = c
+
+    # Preceding block comments: scan backwards from each line
+    for i in range(len(lines)):
+        # Look up to 3 lines above for a comment
+        for j in range(1, 4):
+            if i - j < 0:
+                break
+            prev = lines[i - j].strip()
+            if prev.startswith("--"):
+                c = prev.lstrip("-").strip()
+                if c and len(c) > 3:
+                    preceding_comments[i] = c
+                    break
+            elif prev and not prev.startswith("vim.") and not prev.startswith("map("):
+                break  # hit non-comment, non-empty, non-keymap line — stop
+
+    call_pat = re.compile(
+        r'(?:vim\.keymap\.set|vim\.api\.nvim_set_keymap|map|keymap\.set)\s*\(\s*'
+        r'(\{[^}]*\}|"[^"]*"|\'[^\']*\')\s*,\s*'
+        r'("(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\')\s*,\s*'
+        r'((?:"(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\'|\[\[.*?\]\]|vim\.[^\s,)]+|[A-Za-z_][\w.]*|[^,)]+?))\s*'
+        r'(?:,\s*(\{[^}]*\}))?\s*\)',
+        re.DOTALL
+    )
+
+    for m in call_pat.finditer(text):
+        mode_raw, lhs_raw, rhs_raw, opts_raw = m.groups()
+        opts_raw = opts_raw or ""
+        lhs_raw = lhs_raw.strip().strip("\"\'")
+
+        keys = clean_lhs(lhs_raw)
+        if not keys or keys == "?" or "nop" in keys.lower():
+            continue
+
+        # Priority: explicit desc > inline comment > preceding comment > rhs pattern
+        desc_m = re.search(r'desc\s*=\s*"([^"]+)"|desc\s*=\s*\'([^\']+)\'', opts_raw)
+        if desc_m:
+            desc = desc_m.group(1) or desc_m.group(2)
+        else:
+            line_no = text[:m.start()].count("\n")
+            desc = (inline_comments.get(line_no)
+                    or preceding_comments.get(line_no)
+                    or action_to_desc(rhs_raw.strip().strip("\"\'").strip("[]")))
+
+        mode_label = get_mode_label(mode_raw)
+        if mode_label and mode_label != "Normal":
+            desc = f"[{mode_label}] {desc}"
+
+        entry = (keys, desc)
+        if entry not in seen:
+            seen.add(entry)
+            binds.append({"keys": keys, "desc": desc})
+
+    label = stem.replace("-", " ").replace("_", " ").title()
+    return make_output(label, "code", binds)
+
+
+def parse_plain(text: str, stem: str) -> dict:
+    """
+    Parse plain text keybind files.
+    Supports:
+      KEYS    Description      (tab or 2+ spaces separated)
+      KEYS  -  Description     (dash separated)
+      KEYS: Description        (colon separated)
+    Lines starting with # are treated as section headers.
+    """
+    binds = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("//"):
+            continue
+        if line.startswith("#"):
+            continue  # section header — skip for now
+
+        # Try tab separation first
+        if "\t" in line:
+            parts = line.split("\t", 1)
+            if len(parts) == 2:
+                binds.append({
+                    "keys": normalise_keys(parts[0].strip()),
+                    "desc": parts[1].strip(),
+                })
+            continue
+
+        # Try " - " separator
+        if " - " in line:
+            parts = line.split(" - ", 1)
+            binds.append({
+                "keys": normalise_keys(parts[0].strip()),
+                "desc": parts[1].strip(),
+            })
+            continue
+
+        # Try colon separator
+        if ": " in line:
+            parts = line.split(": ", 1)
+            binds.append({
+                "keys": normalise_keys(parts[0].strip()),
+                "desc": parts[1].strip(),
+            })
+            continue
+
+        # Try 2+ spaces as separator
+        m = re.match(r"^(\S+(?:\+\S+)*)\s{2,}(.+)$", line)
+        if m:
+            binds.append({
+                "keys": normalise_keys(m.group(1)),
+                "desc": m.group(2).strip(),
+            })
+
+    label = stem.replace("-", " ").replace("_", " ").title()
+    return make_output(label, "keyboard", binds)
+
+
+def detect_and_parse(path: Path) -> dict | None:
+    """Auto-detect file format and parse it."""
+    text = path.read_text(encoding="utf-8", errors="replace")
+    stem = path.stem
+    ext = path.suffix.lower()
+
+    # .json — pass through (validate structure)
+    if ext == ".json":
+        try:
+            data = json.loads(text)
+            if "binds" in data:
+                return data
+        except json.JSONDecodeError:
+            pass
+        return None
+
+    # .lua — Neovim
+    if ext == ".lua":
+        return parse_lua(text, stem)
+
+    # .toml — Tmux or other TOML-based configs
+    if ext == ".toml":
+        return parse_toml(text, stem)
+
+    # .conf — detect Hyprland vs Kitty by content
+    if ext == ".conf":
+        if re.search(r"^\s*bind[erltm]?\s*=", text, re.MULTILINE | re.IGNORECASE):
+            return parse_hyprland(text, stem)
+        if re.search(r"^\s*map\s+", text, re.MULTILINE | re.IGNORECASE):
+            return parse_kitty(text, stem)
+        # Generic conf — try plain parser
+        return parse_plain(text, stem)
+
+    # .txt or anything else — plain text
+    return parse_plain(text, stem)
+
+
+# ── Icon heuristics ───────────────────────────────────────────────────────────
+
+ICON_MAP = {
+    "hypr": "desktop_windows", "hyprland": "desktop_windows",
+    "kitty": "terminal", "alacritty": "terminal", "wezterm": "terminal",
+    "tmux": "grid_view", "zellij": "grid_view",
+    "nvim": "code", "neovim": "code", "vim": "code", "helix": "code",
+    "fish": "terminal", "bash": "terminal", "zsh": "terminal",
+    "vscode": "code", "code": "code",
+    "qutebrowser": "travel_explore", "firefox": "travel_explore",
+    "i3": "desktop_windows", "sway": "desktop_windows",
+    "rofi": "apps", "wofi": "apps",
+}
+
+def guess_icon(stem: str) -> str:
+    low = stem.lower()
+    for key, icon in ICON_MAP.items():
+        if key in low:
+            return icon
+    return "keyboard"
+
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+
+def main():
+    if len(sys.argv) < 3:
+        print(__doc__)
+        sys.exit(1)
+
+    source_dir = Path(sys.argv[1]).expanduser()
+    output_dir = Path(sys.argv[2]).expanduser()
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Supported extensions
+    supported = {".conf", ".lua", ".toml", ".json", ".txt"}
+    files = sorted(
+        f for f in source_dir.iterdir()
+        if f.is_file() and f.suffix.lower() in supported
+    )
+
+    if not files:
+        print(f"No supported files found in {source_dir}")
+        print(f"Supported: {', '.join(sorted(supported))}")
+        sys.exit(0)
+
+    converted = 0
+    skipped = 0
+
+    for src in files:
+        print(f"  {src.name}  ", end="")
+        try:
+            data = detect_and_parse(src)
+            if data is None:
+                print("✗  (skipped — unrecognised or invalid)")
+                skipped += 1
+                continue
+
+            # Apply icon heuristic if generic
+            if data.get("icon") == "keyboard":
+                data["icon"] = guess_icon(src.stem)
+
+            if not data.get("binds"):
+                print("✗  (skipped — no binds found)")
+                skipped += 1
+                continue
+
+            out_name = src.stem + ".json"
+            out_path = output_dir / out_name
+            out_path.write_text(json.dumps(data, indent=2, ensure_ascii=False))
+            print(f"✓  → {out_name}  ({len(data['binds'])} binds)")
+            converted += 1
+
+        except Exception as e:
+            print(f"✗  (error: {e})")
+            skipped += 1
+
+    print(f"\n{converted} converted, {skipped} skipped → {output_dir}")
+
+
+if __name__ == "__main__":
+    main()

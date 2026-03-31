@@ -1,0 +1,15 @@
+# This file contains fish universal variable definitions.
+# VERSION: 3.0
+SETUVAR --export QT_QPA_PLATFORMTHEME:qt6ct
+SETUVAR __fish_initialized:4300
+SETUVAR fish_color_autosuggestion:\x23c7c7b7
+SETUVAR fish_color_command:\x23c0ce7e
+SETUVAR fish_color_comment:\x23919283
+SETUVAR fish_color_error:\x23ffb4ab
+SETUVAR fish_color_match:\x2d\x2dbackground\x3d\x2346483b
+SETUVAR fish_color_normal:\x23e4e3d6
+SETUVAR fish_color_param:\x23c5c9a8
+SETUVAR fish_color_redirection:\x23a2d0c3
+SETUVAR fish_color_selection:\x2d\x2dbackground\x3d\x2346483b
+SETUVAR fish_greeting:\x1d
+SETUVAR fish_user_paths:/home/cwebbtv/\x2elocal/bin

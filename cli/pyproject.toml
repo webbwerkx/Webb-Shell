@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "webb"
+version = "1.0.0"
+requires-python = ">=3.11"
+dependencies = [
+    "pillow",
+    "materialyoucolor3"
+]
+
+[project.scripts]
+webb = "webb:main"
+
+[tool.hatch.build.targets.sdist]
+only-include = [
+    "src",
+    "completions",
+    "README.md"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/webb"]
+
+[tool.ruff]
+line-length = 120

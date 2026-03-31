@@ -1,0 +1,160 @@
+# ============================================================
+#  webbshell .gitignore
+# ============================================================
+
+
+# ── C++ / CMake build ────────────────────────────────────────
+shell/build/
+shell/build.ninja
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+.cmake/
+.ninja_log
+.ninja_deps
+*.ninja
+CTestTestfile.cmake
+_deps/
+
+# Qt / QML compiled cache
+*.qmlc
+*.jsc
+.qt/
+.rcc/
+qmlcache/
+
+
+# ── Python ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Packaging / distribution
+cli/dist/
+cli/build/
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+wheels/
+
+# Virtual environments (if you ever make one)
+.venv/
+venv/
+env/
+.env/
+
+
+# ── direnv ───────────────────────────────────────────────────
+# Contains your full cmake build command, compiler flags,
+# and sets CAELESTIA_LIB_DIR / QML2_IMPORT_PATH.
+# Not needed by anyone else, and reveals your build setup.
+.envrc
+
+
+# ── Sensitive personal config ─────────────────────────────────
+# UNCOMMENT these if you make the repo public.
+# They contain your Klipper IP (10.0.0.23), your username
+# (cwebbtv in the logout command), and your weather location.
+#
+# webb/shell.json
+# webb/cli.json
+#
+# If you keep them committed, replace the Klipper host with
+# a placeholder before pushing, and fix the hardcoded username.
+
+
+# ── Wallpaper images ─────────────────────────────────────────
+# The Pictures/ dir in the archive is currently empty,
+# but block it anyway so wallpapers never accidentally get staged.
+# Images are large binaries and don't belong in git.
+webb/Pictures/
+Pictures/
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.gif
+*.tif
+*.tiff
+# Exception: keep the shell's bundled assets (bongocat.gif, logo.svg, etc.)
+!shell/assets/*.gif
+!shell/assets/*.png
+!shell/assets/*.svg
+
+
+# ── Matugen generated output ──────────────────────────────────
+# Matugen writes its output to ~/.config/*, which is outside this
+# repo. These rules are here in case you ever symlink matugen config
+# into the repo, or accidentally copy generated files in.
+#
+# Files matugen generates:
+#   ~/.config/kitty/themes/webb.conf
+#   ~/.config/gtk-3.0/gtk.css / gtk-4.0/gtk.css
+#   ~/.config/waybar/colors.css (if you use waybar)
+#   ~/.config/hypr/colors.conf  (if you use a matugen hypr template)
+#   ~/.config/alacritty/colors.toml
+#   ~/.config/rofi/colors.rasi
+#   etc.
+#
+# None of these should be in this repo — they're matugen's job.
+# Blocking the patterns just in case:
+colors.css
+colors.conf
+colors.rasi
+colors.toml
+webb.theme.css
+
+
+# ── Webb state & cache (outside repo, belt-and-suspenders) ────
+# These live in ~/.local/state/webb/ and ~/.cache/webb/.
+# Only matters if you ever restructure the repo to include state.
+scheme.json
+smart.json
+sequences.txt
+path.txt
+thumbnail.jpg
+*.lock
+
+
+# ── Editor ───────────────────────────────────────────────────
+# .vscode/settings.json is already in the repo (QML LSP config)
+# and is worth keeping — it helps anyone editing QML files.
+# Block other editor-specific noise:
+.idea/
+*.iml
+.project
+.classpath
+*.swp
+*.swo
+*~
+.netrwhist
+Session.vim
+tags
+.ccls-cache/
+.clangd/
+
+
+# ── OS ───────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+
+# ── Logs & temp files ────────────────────────────────────────
+*.log
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej

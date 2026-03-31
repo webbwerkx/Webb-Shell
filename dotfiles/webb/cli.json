@@ -1,0 +1,22 @@
+{
+  "theme": {
+    "enableMatugen": true,
+    "enableTerm": true,
+    "enableHypr": true,
+    "enableFuzzel": true,
+    "enableBtop": true,
+    "enableHtop": true,
+    "enableNvtop": true,
+    "enableCava": false,
+    "enableKitty": false,
+    "enableGtk": false,
+    "enableQt": false,
+    "enableDiscord": false,
+    "enableSpicetify": false,
+    "enablePandora": false
+  },
+  "wallpaper": {
+    "postHook": ""
+  },
+  "toggles": {}
+}

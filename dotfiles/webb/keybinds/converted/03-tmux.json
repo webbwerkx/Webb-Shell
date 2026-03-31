@@ -1,0 +1,339 @@
+{
+  "id": "tmux",
+  "label": "Tmux",
+  "icon": "grid_view",
+  "binds": [
+    {
+      "keys": "CTRL+A+Space",
+      "desc": "Select next layout"
+    },
+    {
+      "keys": "CTRL+A+!",
+      "desc": "Break pane to a new window"
+    },
+    {
+      "keys": "CTRL+A+\"",
+      "desc": "Split window vertically"
+    },
+    {
+      "keys": "CTRL+A+#",
+      "desc": "List all paste buffers"
+    },
+    {
+      "keys": "CTRL+A+$",
+      "desc": "Rename current session"
+    },
+    {
+      "keys": "CTRL+A+%",
+      "desc": "Split window horizontally"
+    },
+    {
+      "keys": "CTRL+A+&",
+      "desc": "Kill current window"
+    },
+    {
+      "keys": "CTRL+A+'",
+      "desc": "Prompt for window index to select"
+    },
+    {
+      "keys": "CTRL+A+(",
+      "desc": "Switch to previous client"
+    },
+    {
+      "keys": "CTRL+A+)",
+      "desc": "Switch to next client"
+    },
+    {
+      "keys": "CTRL+A+,",
+      "desc": "Rename current window"
+    },
+    {
+      "keys": "CTRL+A+-",
+      "desc": "Delete the most recent paste buffer"
+    },
+    {
+      "keys": "CTRL+A+.",
+      "desc": "Move the current window"
+    },
+    {
+      "keys": "CTRL+A+/",
+      "desc": "Describe key binding"
+    },
+    {
+      "keys": "CTRL+A+0",
+      "desc": "Select window 0"
+    },
+    {
+      "keys": "CTRL+A+1",
+      "desc": "Select window 1"
+    },
+    {
+      "keys": "CTRL+A+2",
+      "desc": "Select window 2"
+    },
+    {
+      "keys": "CTRL+A+3",
+      "desc": "Select window 3"
+    },
+    {
+      "keys": "CTRL+A+4",
+      "desc": "Select window 4"
+    },
+    {
+      "keys": "CTRL+A+5",
+      "desc": "Select window 5"
+    },
+    {
+      "keys": "CTRL+A+6",
+      "desc": "Select window 6"
+    },
+    {
+      "keys": "CTRL+A+7",
+      "desc": "Select window 7"
+    },
+    {
+      "keys": "CTRL+A+8",
+      "desc": "Select window 8"
+    },
+    {
+      "keys": "CTRL+A+9",
+      "desc": "Select window 9"
+    },
+    {
+      "keys": "CTRL+A+:",
+      "desc": "Prompt for a command"
+    },
+    {
+      "keys": "CTRL+A+;",
+      "desc": "Move to the previously active pane"
+    },
+    {
+      "keys": "CTRL+A+<",
+      "desc": "Display window menu"
+    },
+    {
+      "keys": "CTRL+A+=",
+      "desc": "Choose a paste buffer from a list"
+    },
+    {
+      "keys": "CTRL+A+>",
+      "desc": "Display pane menu"
+    },
+    {
+      "keys": "CTRL+A+?",
+      "desc": "List key bindings"
+    },
+    {
+      "keys": "CTRL+A+C",
+      "desc": "Customize options"
+    },
+    {
+      "keys": "CTRL+A+D",
+      "desc": "Choose and detach a client from a list"
+    },
+    {
+      "keys": "CTRL+A+E",
+      "desc": "Spread panes out evenly"
+    },
+    {
+      "keys": "CTRL+A+L",
+      "desc": "Switch to the last client"
+    },
+    {
+      "keys": "CTRL+A+M",
+      "desc": "Clear the marked pane"
+    },
+    {
+      "keys": "CTRL+A+[",
+      "desc": "Enter copy mode"
+    },
+    {
+      "keys": "CTRL+A+]",
+      "desc": "Paste the most recent paste buffer"
+    },
+    {
+      "keys": "CTRL+A+c",
+      "desc": "Create a new window"
+    },
+    {
+      "keys": "CTRL+A+d",
+      "desc": "Detach the current client"
+    },
+    {
+      "keys": "CTRL+A+f",
+      "desc": "Search for a pane"
+    },
+    {
+      "keys": "CTRL+A+i",
+      "desc": "Display window information"
+    },
+    {
+      "keys": "CTRL+A+l",
+      "desc": "Select the previously current window"
+    },
+    {
+      "keys": "CTRL+A+m",
+      "desc": "Toggle the marked pane"
+    },
+    {
+      "keys": "CTRL+A+n",
+      "desc": "Select the next window"
+    },
+    {
+      "keys": "CTRL+A+o",
+      "desc": "Select the next pane"
+    },
+    {
+      "keys": "CTRL+A+p",
+      "desc": "Select the previous window"
+    },
+    {
+      "keys": "CTRL+A+q",
+      "desc": "Display pane numbers"
+    },
+    {
+      "keys": "CTRL+A+r",
+      "desc": "Redraw the current client"
+    },
+    {
+      "keys": "CTRL+A+s",
+      "desc": "Choose a session from a list"
+    },
+    {
+      "keys": "CTRL+A+t",
+      "desc": "Show a clock"
+    },
+    {
+      "keys": "CTRL+A+w",
+      "desc": "Choose a window from a list"
+    },
+    {
+      "keys": "CTRL+A+x",
+      "desc": "Kill the active pane"
+    },
+    {
+      "keys": "CTRL+A+z",
+      "desc": "Zoom the active pane"
+    },
+    {
+      "keys": "CTRL+A+{",
+      "desc": "Swap the active pane with the pane above"
+    },
+    {
+      "keys": "CTRL+A+}",
+      "desc": "Swap the active pane with the pane below"
+    },
+    {
+      "keys": "CTRL+A+~",
+      "desc": "Show messages"
+    },
+    {
+      "keys": "CTRL+A+Delete",
+      "desc": "Reset so the visible part of the window follows the cursor"
+    },
+    {
+      "keys": "CTRL+A+Page_Up",
+      "desc": "Enter copy mode and scroll up"
+    },
+    {
+      "keys": "CTRL+A+Up",
+      "desc": "Select the pane above the active pane"
+    },
+    {
+      "keys": "CTRL+A+Down",
+      "desc": "Select the pane below the active pane"
+    },
+    {
+      "keys": "CTRL+A+Left",
+      "desc": "Select the pane to the left of the active pane"
+    },
+    {
+      "keys": "CTRL+A+Right",
+      "desc": "Select the pane to the right of the active pane"
+    },
+    {
+      "keys": "CTRL+A+ALT+1",
+      "desc": "Set the even-horizontal layout"
+    },
+    {
+      "keys": "CTRL+A+ALT+2",
+      "desc": "Set the even-vertical layout"
+    },
+    {
+      "keys": "CTRL+A+ALT+3",
+      "desc": "Set the main-horizontal layout"
+    },
+    {
+      "keys": "CTRL+A+ALT+4",
+      "desc": "Set the main-vertical layout"
+    },
+    {
+      "keys": "CTRL+A+ALT+5",
+      "desc": "Select the tiled layout"
+    },
+    {
+      "keys": "CTRL+A+ALT+6",
+      "desc": "Set the main-horizontal-mirrored layout"
+    },
+    {
+      "keys": "CTRL+A+ALT+7",
+      "desc": "Set the main-vertical-mirrored layout"
+    },
+    {
+      "keys": "CTRL+A+ALT+n",
+      "desc": "Select the next window with an alert"
+    },
+    {
+      "keys": "CTRL+A+ALT+o",
+      "desc": "Rotate through the panes in reverse"
+    },
+    {
+      "keys": "CTRL+A+ALT+p",
+      "desc": "Select the previous window with an alert"
+    },
+    {
+      "keys": "CTRL+A+ALT+Up",
+      "desc": "Resize the pane up by 5"
+    },
+    {
+      "keys": "CTRL+A+ALT+Down",
+      "desc": "Resize the pane down by 5"
+    },
+    {
+      "keys": "CTRL+A+ALT+Left",
+      "desc": "Resize the pane left by 5"
+    },
+    {
+      "keys": "CTRL+A+CTRL+o",
+      "desc": "Rotate through the panes"
+    },
+    {
+      "keys": "CTRL+A+CTRL+z",
+      "desc": "Suspend the current client"
+    },
+    {
+      "keys": "CTRL+A+CTRL+Up",
+      "desc": "Resize the pane up"
+    },
+    {
+      "keys": "CTRL+A+CTRL+Down",
+      "desc": "Resize the pane down"
+    },
+    {
+      "keys": "CTRL+A+CTRL+Left",
+      "desc": "Resize the pane left"
+    },
+    {
+      "keys": "CTRL+A+SHIFT+Up",
+      "desc": "Move the visible part of the window up"
+    },
+    {
+      "keys": "CTRL+A+SHIFT+Down",
+      "desc": "Move the visible part of the window down"
+    },
+    {
+      "keys": "CTRL+A+SHIFT+Left",
+      "desc": "Move the visible part of the window left"
+    }
+  ]
+}

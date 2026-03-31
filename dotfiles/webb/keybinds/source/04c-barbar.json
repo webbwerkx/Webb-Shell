@@ -1,0 +1,31 @@
+{
+  "id": "barbar",
+  "label": "Barbar (Buffers)",
+  "icon": "tab",
+  "binds": [
+    { "keys": "ALT+,",          "desc": "Previous buffer" },
+    { "keys": "ALT+.",          "desc": "Next buffer" },
+    { "keys": "ALT+<",          "desc": "Move buffer left" },
+    { "keys": "ALT+>",          "desc": "Move buffer right" },
+    { "keys": "ALT+1",          "desc": "Go to buffer 1" },
+    { "keys": "ALT+2",          "desc": "Go to buffer 2" },
+    { "keys": "ALT+3",          "desc": "Go to buffer 3" },
+    { "keys": "ALT+4",          "desc": "Go to buffer 4" },
+    { "keys": "ALT+5",          "desc": "Go to buffer 5" },
+    { "keys": "ALT+6",          "desc": "Go to buffer 6" },
+    { "keys": "ALT+7",          "desc": "Go to buffer 7" },
+    { "keys": "ALT+8",          "desc": "Go to buffer 8" },
+    { "keys": "ALT+9",          "desc": "Go to buffer 9" },
+    { "keys": "ALT+0",          "desc": "Go to last buffer" },
+    { "keys": "ALT+P",          "desc": "Pin / unpin buffer" },
+    { "keys": "ALT+C",          "desc": "Close buffer" },
+    { "keys": "ALT+SHIFT+C",    "desc": "Restore closed buffer" },
+    { "keys": "CTRL+P",         "desc": "Pick buffer by letter" },
+    { "keys": "CTRL+SHIFT+P",   "desc": "Pick buffer to delete" },
+    { "keys": "SPACE+bb",       "desc": "Sort buffers by number" },
+    { "keys": "SPACE+bn",       "desc": "Sort buffers by name" },
+    { "keys": "SPACE+bd",       "desc": "Sort buffers by directory" },
+    { "keys": "SPACE+bl",       "desc": "Sort buffers by language" },
+    { "keys": "SPACE+bw",       "desc": "Sort buffers by window number" }
+  ]
+}
